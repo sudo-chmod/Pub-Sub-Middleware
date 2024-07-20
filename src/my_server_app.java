@@ -8,11 +8,13 @@ public class my_server_app {
     public static void main(String[] args) {
         //java my_server_app.java <port>
         int port = Integer.parseInt(args[0]);
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
+
+        try {
+            ServerSocket serverSocket = new ServerSocket(port);
             System.out.println("my_server_app is listening on port " + port);
+
             while (true) {
                 Socket socket = serverSocket.accept();
-                System.out.println("<<< Client("+ socket.getPort() +") connected >>>");
                 new client_handler(socket).start();
             }
         } catch (IOException e) {
@@ -23,28 +25,29 @@ public class my_server_app {
 
 class client_handler extends Thread {
     private final Socket socket;
+    private final BufferedReader receiver;
 
-    public client_handler(Socket socket) {
+    public client_handler(Socket socket) throws IOException {
         this.socket = socket;
+        this.receiver = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
     public void run() {
-        try (InputStream input = socket.getInputStream();
-             BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
+        try {
+            System.out.println("<<< Client("+ socket.getPort() +") connected >>>");
+
             String message;
-            while (!Objects.equals(message = reader.readLine(), "terminate")) {
+            while (!Objects.equals(message = receiver.readLine(), "terminate")) {
                 System.out.println("Client("+ socket.getPort() +"): " + message);
             }
+
+            receiver.close();
+            socket.close();
+            System.out.println("<<< Client("+ socket.getPort() +") disconnected >>>");
         } catch (IOException e) {
             System.out.println("my_server_app exception: " + e.getMessage());
             e.printStackTrace();
-        } finally {
-            try {
-                System.out.println("<<< Client("+ socket.getPort() +") disconnected >>>");
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 }
+
