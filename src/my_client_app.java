@@ -20,20 +20,19 @@ public class my_client_app {
             writer.println(role);
 
             if (role.equals("SUBSCRIBER")) {
-                System.out.println("You are connected as SUBSCRIBER");
+                System.out.println("Connection Established as SUBSCRIBER");
                 String message;
                 while (true) {
                     message = receiver.readLine();
                     if (message != null) {
                         if (message.equalsIgnoreCase("terminate")){
-                            System.out.println("passa");
                             break;
                         }
                         System.out.println("PUBLISHER: " + message);
                     }
                 }
             } else if (role.equals("PUBLISHER")) {
-                System.out.println("You are connected as PUBLISHER");
+                System.out.println("Connection Established as PUBLISHER");
                 String message;
                 do {
                     System.out.print("Enter message: ");
@@ -41,18 +40,19 @@ public class my_client_app {
                     writer.println(message);
                 } while (!message.equalsIgnoreCase("terminate"));
             } else {
-                System.out.println("You are connected as Unknown client");
-                System.out.println("Please connect as either SUBSCRIBER or PUBLISHER");
+                System.out.println("Connection Established as Unknown client");
+                System.out.println("Please connect as either SUBSCRIBER or PUBLISHER!");
             }
 
             writer.close();
             reader.close();
             receiver.close();
             socket.close();
-            System.out.println("Connection closed");
+            System.out.println("Connection Closed");
         } catch (UnknownHostException e) {
             System.out.println("Server not found: " + e.getMessage());
         } catch (IOException e) {
             System.out.println("I/O error: " + e.getMessage());
         }
-    }}
+    }
+}
