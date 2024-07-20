@@ -2,47 +2,76 @@ package src;
 
 import java.io.*;
 import java.net.*;
-import java.util.Objects;
+import java.util.*;
 
 public class my_server_app {
+    private static final List<client_handler> subscriberList = new ArrayList<>();
+
     public static void main(String[] args) {
         //java my_server_app.java <port>
         int port = Integer.parseInt(args[0]);
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
+
+        try {
+            ServerSocket serverSocket = new ServerSocket(port);
             System.out.println("my_server_app is listening on port " + port);
+
             while (true) {
                 Socket socket = serverSocket.accept();
-                System.out.println("<<< Client("+ socket.getPort() +") connected >>>");
                 new client_handler(socket).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-}
 
-class client_handler extends Thread {
-    private final Socket socket;
+    private static class client_handler extends Thread {
+        private final Socket socket;
+        private final BufferedReader receiver;
+        private final PrintWriter writer;
 
-    public client_handler(Socket socket) {
-        this.socket = socket;
-    }
+        public client_handler(Socket socket) throws IOException {
+            this.socket = socket;
+            this.receiver = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.writer = new PrintWriter(socket.getOutputStream(), true);
+        }
 
-    public void run() {
-        try (InputStream input = socket.getInputStream();
-             BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
-            String message;
-            while (!Objects.equals(message = reader.readLine(), "terminate")) {
-                System.out.println("Client("+ socket.getPort() +"): " + message);
-            }
-        } catch (IOException e) {
-            System.out.println("my_server_app exception: " + e.getMessage());
-            e.printStackTrace();
-        } finally {
+        public void run() {
             try {
-                System.out.println("<<< Client("+ socket.getPort() +") disconnected >>>");
+                String role = receiver.readLine();
+
+                if (role.equalsIgnoreCase("PUBLISHER")) {
+                    System.out.println("<<< PUBLISHER("+ socket.getPort() +") connected >>>");
+                    String message;
+                    while (!Objects.equals(message = receiver.readLine(), "terminate")) {
+                        System.out.println("PUBLISHER(" + socket.getPort() + "): " + message);
+                        for (client_handler subscriber : subscriberList) {
+                            synchronized (subscriber.writer) {
+                                subscriber.writer.println(message);
+                            }
+                        }
+                    }
+                } else if (role.equalsIgnoreCase("SUBSCRIBER")) {
+                    subscriberList.add(this);
+                    System.out.println("<<< SUBSCRIBER("+ socket.getPort() +") connected >>>");
+                    while (receiver.readLine() != null) {}
+                } else {
+                    System.out.println("<<< Unknown client("+ socket.getPort() +") connected >>>");
+                }
+
+                writer.close();
+                receiver.close();
                 socket.close();
+
+                if (role.equalsIgnoreCase("PUBLISHER")) {
+                    System.out.println("<<< PUBLISHER("+ socket.getPort() +") disconnected >>>");
+                } else if (role.equalsIgnoreCase("SUBSCRIBER")) {
+                    subscriberList.remove(this);
+                    System.out.println("<<< SUBSCRIBER("+ socket.getPort() +") disconnected >>>");
+                } else {
+                    System.out.println("<<< Unknown client("+ socket.getPort() +") disconnected >>>");
+                }
             } catch (IOException e) {
+                System.out.println("my_server_app exception: " + e.getMessage());
                 e.printStackTrace();
             }
         }
