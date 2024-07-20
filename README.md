@@ -39,7 +39,7 @@ The assignment is related to the Publish and Subscribe (Pub/Sub) Middleware Arch
 4. There can be publishers and subscribers interested in different messages connected concurrently to the server.
 
 ### Branch Strategy
-To manage the development of each task efficiently, we will create a separate branch for each task:
+To manage the development of each task efficiently, i will create a separate branch for each task:
 - `task-1`: For Task 1 implementation
 - `task-2`: For Task 2 implementation
 - `task-3`: For Task 3 implementation
