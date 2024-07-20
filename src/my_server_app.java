@@ -27,12 +27,12 @@ public class my_server_app {
     private static class client_handler extends Thread {
         private final Socket socket;
         private final BufferedReader receiver;
-        private final PrintWriter writer;
+        private final PrintWriter sender;
 
         public client_handler(Socket socket) throws IOException {
             this.socket = socket;
             this.receiver = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.writer = new PrintWriter(socket.getOutputStream(), true);
+            this.sender = new PrintWriter(socket.getOutputStream(), true);
         }
 
         public void run() {
@@ -45,20 +45,20 @@ public class my_server_app {
                     while (!Objects.equals(message = receiver.readLine(), "terminate")) {
                         System.out.println("PUBLISHER(" + socket.getPort() + "): " + message);
                         for (client_handler subscriber : subscriberList) {
-                            synchronized (subscriber.writer) {
-                                subscriber.writer.println(message);
+                            synchronized (subscriber.sender) {
+                                subscriber.sender.println(message);
                             }
                         }
                     }
                 } else if (role.equalsIgnoreCase("SUBSCRIBER")) {
-                    subscriberList.add(this);
                     System.out.println("<<< SUBSCRIBER("+ socket.getPort() +") connected >>>");
+                    subscriberList.add(this);
                     while (receiver.readLine() != null) {}
                 } else {
                     System.out.println("<<< Unknown client("+ socket.getPort() +") connected >>>");
                 }
 
-                writer.close();
+                sender.close();
                 receiver.close();
                 socket.close();
 
